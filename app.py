@@ -28,29 +28,24 @@ class Features(BaseModel):
     ema_21_slope: float
 
 # ✅ Endpoint racine
+@app.get("/")
+def home():
+    return {"message": "API is live. Use POST /predict to get the future_close prediction."}
+
+# ✅ Endpoint de prédiction
 @app.post("/predict")
-def predict(features: Features):
-    data = pd.DataFrame([features.dict()])
-    predicted_close = model.predict(data)[0]
-    
-    # Optionnel : logique de seuil / signal côté backend
-    last_close = features.close_dernier
-    atr = features.atr
-    volatility = features.volatility_close_std
-    seuil_utilise = atr
-    
-    if predicted_close > last_close + seuil_utilise:
-        signal = "BUY"
-    elif predicted_close < last_close - seuil_utilise:
-        signal = "SELL"
-    else:
-        signal = "NO_TRADE"
-    
+def predict_future_close(features: Features):
+    # ✅ Transformer en dataframe
+    df_input = pd.DataFrame([features.dict()])
+
+    # ✅ Vérifier l'ordre des colonnes
+    expected_cols = list(model.feature_names_in_)
+    df_input = df_input[expected_cols]
+
+    # ✅ Faire la prédiction
+    prediction = float(model.predict(df_input)[0])
+
+    # ✅ Retour structuré
     return {
-        "signal": signal,
-        "predicted_close": round(predicted_close, 2),
-        "last_close": round(last_close, 2),
-        "seuil_utilisé": round(seuil_utilise, 2),
-        "atr": round(atr, 2),
-        "volatility_close_std": round(volatility, 2)
+        "predicted_future_close": round(prediction, 2)
     }
