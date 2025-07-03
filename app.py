@@ -3,7 +3,6 @@ from pydantic import BaseModel
 import pickle
 import pandas as pd
 
-
 # ✅ Charger ton modèle entraîné
 with open("gold_future_close_regressor.pkl", "rb") as f:
     model = pickle.load(f)
@@ -35,17 +34,30 @@ def home():
 # ✅ Endpoint de prédiction
 @app.post("/predict")
 def predict_future_close(features: Features):
-    # ✅ Transformer en dataframe
+    # ✅ Convertir en dataframe
     df_input = pd.DataFrame([features.dict()])
 
-    # ✅ Vérifier l'ordre des colonnes
+    # ✅ Vérifier l'ordre des colonnes du modèle
     expected_cols = list(model.feature_names_in_)
     df_input = df_input[expected_cols]
 
     # ✅ Faire la prédiction
     prediction = float(model.predict(df_input)[0])
 
-    # ✅ Retour structuré
-    return {
-        "predicted_future_close": round(prediction, 2)
+    # ✅ Construire la réponse complète
+    response = {
+        "predicted_future_close": round(prediction, 2),
+        "received_features": {
+            "rsi": features.rsi,
+            "ema_9": features.ema_9,
+            "ema_21": features.ema_21,
+            "ema_distance": features.ema_distance,
+            "macd_line": features.macd_line,
+            "atr": features.atr,
+            "volatility_close_std": features.volatility_close_std,
+            "ema_9_slope": features.ema_9_slope,
+            "ema_21_slope": features.ema_21_slope
+        }
     }
+
+    return response
